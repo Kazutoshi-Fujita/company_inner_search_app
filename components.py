@@ -8,7 +8,7 @@
 import streamlit as st
 import utils
 import constants as ct
-
+import os
 
 ############################################################
 # 関数定義
@@ -90,8 +90,8 @@ def display_conversation_log():
                         # 参照元のありかに応じて、適したアイコンを取得
                         icon = utils.get_source_icon(message['content']['main_file_path'])
                         # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
-                        if "main_page_number" in message["content"]:
-                            st.success(f"{message['content']['main_file_path']}", icon=icon)
+                        if "main_page_number" in message["content"] and os.path.splitext(message['content']['main_file_path'])[1].lower() == '.pdf':       
+                            st.success(f"{message['content']['main_file_path']}(ページNo.{message['content']['main_page_number']})", icon=icon)
                         else:
                             st.success(f"{message['content']['main_file_path']}", icon=icon)
                         
@@ -107,8 +107,8 @@ def display_conversation_log():
                                 # 参照元のありかに応じて、適したアイコンを取得
                                 icon = utils.get_source_icon(sub_choice['source'])
                                 # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
-                                if "page_number" in sub_choice:
-                                    st.info(f"{sub_choice['source']}", icon=icon)
+                                if "page_number" in sub_choice and os.path.splitext(sub_choice['source'])[1].lower() == '.pdf':
+                                    st.info(f"{sub_choice['source']}(ページNo.{sub_choice['page_number']})", icon=icon)
                                 else:
                                     st.info(f"{sub_choice['source']}", icon=icon)
                     # ファイルのありかの情報が取得できなかった場合、LLMからの回答のみ表示
@@ -159,11 +159,11 @@ def display_search_llm_response(llm_response):
         # 参照元のありかに応じて、適したアイコンを取得
         icon = utils.get_source_icon(main_file_path)
         # ページ番号が取得できた場合のみ、ページ番号を表示（ドキュメントによっては取得できない場合がある）
-        if "page" in llm_response["context"][0].metadata:
+        if "page" in llm_response["context"][0].metadata and os.path.splitext(main_file_path)[1].lower() == '.pdf':
             # ページ番号を取得
-            main_page_number = llm_response["context"][0].metadata["page"]
+            main_page_number = llm_response["context"][0].metadata["page"] + 1
             # 「メインドキュメントのファイルパス」と「ページ番号」を表示
-            st.success(f"{main_file_path}", icon=icon)
+            st.success(f"{main_file_path}(ページNo.{main_page_number})", icon=icon)
         else:
             # 「メインドキュメントのファイルパス」を表示
             st.success(f"{main_file_path}", icon=icon)
@@ -194,9 +194,9 @@ def display_search_llm_response(llm_response):
             duplicate_check_list.append(sub_file_path)
             
             # ページ番号が取得できない場合のための分岐処理
-            if "page" in document.metadata:
+            if "page" in document.metadata and os.path.splitext(sub_file_path)[1].lower() == '.pdf':
                 # ページ番号を取得
-                sub_page_number = document.metadata["page"]
+                sub_page_number = document.metadata["page"] + 1
                 # 「サブドキュメントのファイルパス」と「ページ番号」の辞書を作成
                 sub_choice = {"source": sub_file_path, "page_number": sub_page_number}
             else:
@@ -217,9 +217,9 @@ def display_search_llm_response(llm_response):
                 # 参照元のありかに応じて、適したアイコンを取得
                 icon = utils.get_source_icon(sub_choice['source'])
                 # ページ番号が取得できない場合のための分岐処理
-                if "page_number" in sub_choice:
+                if "page_number" in sub_choice and os.path.splitext(sub_choice['source'])[1].lower() == '.pdf':
                     # 「サブドキュメントのファイルパス」と「ページ番号」を表示
-                    st.info(f"{sub_choice['source']}", icon=icon)
+                    st.info(f"{sub_choice['source']}(ページNo.{sub_page_number})", icon=icon)
                 else:
                     # 「サブドキュメントのファイルパス」を表示
                     st.info(f"{sub_choice['source']}", icon=icon)
@@ -295,11 +295,11 @@ def display_contact_llm_response(llm_response):
                 continue
 
             # ページ番号が取得できた場合のみ、ページ番号を表示（ドキュメントによっては取得できない場合がある）
-            if "page" in document.metadata:
+            if "page" in document.metadata and os.path.splitext(file_path)[1].lower() == '.pdf':
                 # ページ番号を取得
-                page_number = document.metadata["page"]
+                page_number = document.metadata["page"]+1
                 # 「ファイルパス」と「ページ番号」
-                file_info = f"{file_path}"
+                file_info = f"{file_path}(ページNo.{page_number})"
             else:
                 # 「ファイルパス」のみ
                 file_info = f"{file_path}"
