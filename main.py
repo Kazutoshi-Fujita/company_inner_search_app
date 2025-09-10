@@ -20,6 +20,10 @@ import components as cn
 # （自作）変数（定数）がまとめて定義・管理されているモジュール
 import constants as ct
 
+import os
+# CSVからDB化する
+import sys
+from db_manager import create_and_populate_db
 
 ############################################################
 # 2. 設定関連
@@ -32,6 +36,8 @@ st.set_page_config(
 # ログ出力を行うためのロガーの設定
 logger = logging.getLogger(ct.LOGGER_NAME)
 
+# USER_AGENT environment variable not set, consider setting it to identify your requests.
+os.environ["USER_AGENT"] = "company_inner_search_app/1.0"
 
 ############################################################
 # 3. 初期化処理
@@ -52,6 +58,17 @@ if not "initialized" in st.session_state:
     st.session_state.initialized = True
     logger.info(ct.APP_BOOT_MESSAGE)
 
+ # db_managerから関数を呼び出し
+success = create_and_populate_db()
+print(success)
+if success:
+    print("データベースの準備が完了しました。")
+    # ここに他のアプリケーションロジックを追加できます
+    # 例: データベースからデータを読み込む処理など
+    # 例えば、db_managerにget_employees()のような関数を追加して呼び出す
+else:
+    print("データベースの準備中にエラーが発生しました。アプリケーションを終了します。")
+    sys.exit()
 
 ############################################################
 # 4. 初期表示

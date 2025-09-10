@@ -19,6 +19,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 import constants as ct
+from employee_roster_loader import EmployeeRosterLoader # EmployeeRosterLoaderをインポート
 
 
 ############################################################
@@ -110,26 +111,35 @@ def initialize_retriever():
         return
     
     # RAGの参照先となるデータソースの読み込み
-    docs_all = load_data_sources()
+    all_docs = load_data_sources()
 
-    # OSがWindowsの場合、Unicode正規化と、cp932（Windows用の文字コード）で表現できない文字を除去
-    for doc in docs_all:
+    # OSがWindowsの場合、Unicode正規化と、cp932（Windows用の文字コード）を除去
+    for doc in all_docs:
         doc.page_content = adjust_string(doc.page_content)
         for key in doc.metadata:
-            doc.metadata[key] = adjust_string(doc.metadata[key])
+            # メタデータも文字列の場合のみ調整
+            if isinstance(doc.metadata[key], str):
+                doc.metadata[key] = adjust_string(doc.metadata[key])
     
     # 埋め込みモデルの用意
     embeddings = OpenAIEmbeddings()
     
-    # チャンク分割用のオブジェクトを作成
+    # ドキュメントの種類によってチャンク分割を調整
+    splitted_docs = []
     text_splitter = CharacterTextSplitter(
         chunk_size=ct.CHUNK_SIZE,
         chunk_overlap=ct.CHUNK_OVERLAP,
         separator="\n"
     )
 
-    # チャンク分割を実施
-    splitted_docs = text_splitter.split_documents(docs_all)
+    for doc in all_docs:
+        # EmployeeRosterLoaderで読み込まれたドキュメントは、
+        # 既に部署ごとに統合されているため、これ以上分割しない
+        if isinstance(doc.metadata.get("source"), str) and doc.metadata["source"].endswith(".csv"):
+            splitted_docs.append(doc)
+        else:
+            # それ以外のドキュメントは通常通りチャンク分割
+            splitted_docs.extend(text_splitter.split_documents([doc]))
 
     # ベクターストアの作成
     db = Chroma.from_documents(splitted_docs, embedding=embeddings)
